@@ -1,7 +1,7 @@
 // My Tasks Basic
 
 // HTML Elements
-let goBtnEl = document.getElementById('go-btn');
+let taskInputEl = document.getElementById("task-input");
 let menuEl = document.getElementById('menu');
 let tasksEl = document.getElementById('tasks');
 
@@ -10,30 +10,20 @@ let tasks = initTasks();
 displayTasks();
 
 // Go Btn - Menu Listener
-goBtnEl.addEventListener('click', goBtnHandler);
+taskInputEl.addEventListener("keydown", taskSubmitHandler);
 
-function goBtnHandler() {
-  // Get Menu Selection
-  let selection = menuEl.value;
-
-  if (selection === 'add') {
-    addTask();
-  } else if (selection === 'toggle') {
-    toggleTask();
-  } else if (selection === 'remove') {
-    removeTask();
-  } else if (selection === 'clear') {
-    clearAll();
+function taskSubmitHandler(e) {
+  if(e.code === "Enter"){  
+    // Add Submitted Task
+    let userTask = taskInputEl.value;
+    tasks.push(newTask(userTask));
+    saveTasks();
+    displayTasks();
+    taskInputEl.value = "";
   }
 }
 
 // MENU FUNCTIONS
-function addTask() {
-  let userTask = prompt('Please enter a new task:');
-  tasks.push(newTask(userTask));
-  saveTasks();
-  displayTasks();
-}
 
 function toggleTask() {
   let taskIndex = +prompt('Please enter number of task to toggle:');
@@ -43,13 +33,6 @@ function toggleTask() {
   } else {
     task.completed = '';
   }
-  saveTasks();
-  displayTasks();
-}
-
-function removeTask() {
-  let taskIndex = +prompt('Please enter number of task to remove:');
-  tasks.splice(taskIndex, 1);
   saveTasks();
   displayTasks();
 }
@@ -67,17 +50,16 @@ function initTasks() {
 }
 
 function displayTasks() {
-  let outputStr = '';
+  tasksEl.innerHTML = "";
   for (let i = 0; i < tasks.length; i++) {
-    outputStr += getTaskHTMLStr(tasks[i], i);
+    tasksEl.appendChild(getTaskHTML(tasks[i], i));
   }
-  tasksEl.innerHTML = outputStr;
 }
 
 function newTask(taskDescription) {
   return {
     description: taskDescription,
-    completed: '',
+    completed: false,
   };
 }
 
@@ -85,10 +67,55 @@ function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
-function getTaskHTMLStr(task, index) {
-  return `
-    <div class="${task.completed}">
-      ${index}: ${task.description}
-    </div>
-  `;
+function getTaskHTML(task, index) {
+  // Use JavaScript to build the task <div>
+
+  //Check Box Element
+  let checkboxEl = document.createElement("input");
+  checkboxEl.type = "checkbox";
+  checkboxEl.dataset.index = index;
+  checkboxEl.checked = task.completed;
+  checkboxEl.addEventListener("input", checkBoxHandler);
+  
+
+  //Task Description Text Node
+  let textSpanEl = document.createElement("span");
+  textSpanEl.innerHTML = task.description;
+  if (task.completed) {
+    textSpanEl.className = "completed"
+  }
+
+  // Remove Button
+  let buttonEl = document.createElement("button");
+  buttonEl.innerHTML = "Remove";
+  buttonEl.dataset.index = index;
+  buttonEl.addEventListener("click", removeBtnHandler);
+
+  // Add everything to a div element
+  let divEl = document.createElement("div");
+  divEl.appendChild(checkboxEl);
+  divEl.appendChild(textSpanEl);
+  divEl.appendChild(buttonEl);
+  
+  return divEl;
 }
+
+//Event Functions
+function checkBoxHandler(e){
+  // Get index of task to remove
+  let taskIndex = +e.target.dataset.index;
+  let task = tasks[taskIndex];
+  task.completed = !task.completed;
+  saveTasks();
+  displayTasks();
+
+}
+
+function removeBtnHandler(e){
+  // Get INdex of the Task to Remove
+  let taskIndex = +e.target.dataset.index;
+  tasks.splice(taskIndex, 1);
+  saveTasks();
+  displayTasks();
+}
+
